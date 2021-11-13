@@ -29,7 +29,7 @@ pub enum Environment {
 impl Environment {
     fn host(&self) -> Result<Url, QuestradeError> {
         Ok(match self {
-            Environment::Production => Url::parse("https://login.questrade.com")?
+            Environment::Production => Url::parse("https://login.questrade.com")?,
         })
     }
 
@@ -43,7 +43,11 @@ impl Environment {
 }
 
 impl Client {
-    pub fn new(http_client: reqwest::Client, consumer_key: &str, env: Environment) -> Result<Self, QuestradeError> {
+    pub fn new(
+        http_client: reqwest::Client,
+        consumer_key: &str,
+        env: Environment,
+    ) -> Result<Self, QuestradeError> {
         let client_id = ClientId::new(consumer_key.into());
         let auth_url = AuthUrl::new(env.authorize_url()?.into()).unwrap();
         let token_url = TokenUrl::new(env.token_url()?.into()).unwrap();

@@ -4,16 +4,16 @@ use oauth2::{
         BasicErrorResponse, BasicRevocationErrorResponse, BasicTokenIntrospectionResponse,
         BasicTokenType,
     },
-    reqwest::async_http_client,
-    ExtraTokenFields, RefreshToken, StandardRevocableToken, StandardTokenResponse, TokenResponse,
+    ExtraTokenFields, HttpRequest, HttpResponse, RefreshToken, StandardRevocableToken,
+    StandardTokenResponse, TokenResponse,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::{client::Client, errors::QuestradeError};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ApiServer {
-    pub(crate) api_server: String,
+pub(crate) struct ApiServer {
+    api_server: String,
 }
 
 impl ExtraTokenFields for ApiServer {}
@@ -52,9 +52,40 @@ impl Client {
         Ok(self
             .auth_client
             .exchange_refresh_token(&token)
-            .request_async(&async_http_client)
+            .request_async(|request| self.execute(request))
             .await
             .map_err(|err| QuestradeError::InternalError(err.to_string()))?
             .into())
+    }
+
+    async fn execute(&self, request: HttpRequest) -> Result<HttpResponse, QuestradeError> {
+        let mut request_builder = self
+            .http
+            .request(request.method, request.url.as_str())
+            .body(request.body);
+        for (name, value) in &request.headers {
+            request_builder = request_builder.header(name.as_str(), value.as_bytes());
+        }
+        let request = request_builder
+            .build()
+            .map_err(|e| QuestradeError::InternalError(e.to_string()))?;
+
+        let response = self
+            .http
+            .execute(request)
+            .await
+            .map_err(|e| QuestradeError::TransportError(e.to_string()))?;
+
+        let status_code = response.status();
+        let headers = response.headers().to_owned();
+        let chunks = response
+            .bytes()
+            .await
+            .map_err(|e| QuestradeError::InternalError(e.to_string()))?;
+        Ok(HttpResponse {
+            status_code,
+            headers,
+            body: chunks.to_vec(),
+        })
     }
 }
