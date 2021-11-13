@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_enum_str::{Deserialize_enum_str, Serialize_enum_str};
 
 pub mod accounts;
 pub mod auth;
@@ -68,6 +69,19 @@ pub enum ClientAccountType {
     SoleProprietorship,
 }
 
+#[derive(Debug, strum_macros::Display, strum_macros::EnumIter, Deserialize, Serialize)]
+pub enum Currency {
+    CAD,
+    USD,
+}
+
+#[derive(Debug, strum_macros::EnumIter, Deserialize_enum_str, Serialize_enum_str)]
+pub enum ActivityType {
+    Interest,
+    #[serde(other)]
+    Other(String),
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -125,6 +139,17 @@ mod tests {
                 ClientAccountType::JointAndInformalTrust => "Joint and Informal Trust",
                 ClientAccountType::Partnership => "Partnership",
                 ClientAccountType::SoleProprietorship => "Sole Proprietorship",
+            };
+            assert_eq!(expected_string, format!("{}", t));
+        })
+    }
+
+    #[test]
+    fn currency_display_works() {
+        <Currency as strum::IntoEnumIterator>::iter().for_each(|t| {
+            let expected_string = match t {
+                Currency::CAD => "CAD",
+                Currency::USD => "USD",
             };
             assert_eq!(expected_string, format!("{}", t));
         })
