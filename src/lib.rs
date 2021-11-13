@@ -7,6 +7,8 @@ pub mod errors;
 pub mod markets;
 pub mod symbols;
 
+pub use client::Client;
+
 #[derive(Debug, strum_macros::Display, strum_macros::EnumIter, Deserialize, Serialize)]
 pub enum AccountType {
     Cash,
