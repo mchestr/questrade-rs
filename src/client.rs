@@ -90,3 +90,18 @@ impl Client {
             .await
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn time_derserialize_works() {
+        let data = r#"
+        {
+            "time": "2014-10-24T12:14:42.730000-04:00"
+        }
+        "#;
+        let _t: Time = serde_json::from_str(data).expect("failed to deserialize JSON");
+    }
+}
