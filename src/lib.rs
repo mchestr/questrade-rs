@@ -10,7 +10,9 @@ pub mod symbols;
 
 pub use client::Client;
 
-#[derive(Debug, strum_macros::Display, strum_macros::EnumIter, Deserialize, Serialize)]
+#[derive(
+    Debug, strum_macros::Display, strum_macros::EnumIter, Deserialize, Serialize, PartialEq, Clone,
+)]
 pub enum AccountType {
     Cash,
     FRESP,
@@ -29,7 +31,9 @@ pub enum AccountType {
     TFSA,
 }
 
-#[derive(Debug, strum_macros::Display, strum_macros::EnumIter, Deserialize, Serialize)]
+#[derive(
+    Debug, strum_macros::Display, strum_macros::EnumIter, Deserialize, Serialize, PartialEq, Clone,
+)]
 pub enum AccountStatus {
     Active,
     #[strum(serialize = "Suspended (Closed)")]
@@ -44,7 +48,9 @@ pub enum AccountStatus {
     Closed,
 }
 
-#[derive(Debug, strum_macros::Display, strum_macros::EnumIter, Deserialize, Serialize)]
+#[derive(
+    Debug, strum_macros::Display, strum_macros::EnumIter, Deserialize, Serialize, PartialEq, Clone,
+)]
 pub enum ClientAccountType {
     Corporation,
     Family,
@@ -69,17 +75,30 @@ pub enum ClientAccountType {
     SoleProprietorship,
 }
 
-#[derive(Debug, strum_macros::Display, strum_macros::EnumIter, Deserialize, Serialize)]
+#[derive(
+    Debug, strum_macros::Display, strum_macros::EnumIter, Deserialize, Serialize, PartialEq, Clone,
+)]
 pub enum Currency {
     CAD,
     USD,
 }
 
-#[derive(Debug, strum_macros::EnumIter, Deserialize_enum_str, Serialize_enum_str)]
+#[derive(
+    Debug, strum_macros::EnumIter, Deserialize_enum_str, Serialize_enum_str, PartialEq, Clone,
+)]
 pub enum ActivityType {
     Interest,
     #[serde(other)]
     Other(String),
+}
+
+#[derive(
+    Debug, strum_macros::Display, strum_macros::EnumIter, Deserialize, Serialize, PartialEq, Clone,
+)]
+pub enum StateFilter {
+    All,
+    Open,
+    Closed,
 }
 
 #[cfg(test)]
@@ -152,6 +171,18 @@ mod tests {
                 Currency::USD => "USD",
             };
             assert_eq!(expected_string, format!("{}", t));
+        })
+    }
+
+    #[test]
+    fn state_filter_display_works() {
+        <StateFilter as strum::IntoEnumIterator>::iter().for_each(|f| {
+            let expected_string = match f {
+                StateFilter::All => "All",
+                StateFilter::Open => "Open",
+                StateFilter::Closed => "Closed",
+            };
+            assert_eq!(expected_string, format!("{}", f));
         })
     }
 }
