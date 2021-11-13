@@ -11,7 +11,7 @@ use crate::{
 #[serde(rename_all = "camelCase")]
 pub struct Accounts {
     pub accounts: Vec<Account>,
-    pub client_id: Option<String>,
+    pub user_id: Option<i64>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -62,9 +62,9 @@ impl Client {
         &self,
         token: &ApiToken,
         account_id: &str,
-        start: DateTime<Utc>,
-        end: DateTime<Utc>,
-    ) -> Result<(), QuestradeError> {
+        start: &DateTime<Utc>,
+        end: &DateTime<Utc>,
+    ) -> Result<Activities, QuestradeError> {
         self.send(
             self.base_request(
                 Method::GET,
@@ -72,8 +72,8 @@ impl Client {
                 &format!("v1/accounts/{}/activities", account_id),
             )
             .query(&[
-                ("startTime", DateTime::to_rfc3339(&start)),
-                ("endTime", DateTime::to_rfc3339(&end)),
+                ("startTime", start.to_rfc3339()),
+                ("endTime", end.to_rfc3339()),
             ]),
         )
         .await
