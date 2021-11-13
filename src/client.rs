@@ -1,5 +1,6 @@
 use chrono::Utc;
 use oauth2::{AuthUrl, ClientId, TokenUrl};
+use reqwest::{Method, RequestBuilder};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use strum_macros::Display;
 use url::Url;
@@ -58,23 +59,14 @@ impl Client {
         })
     }
 
-    pub(crate) async fn request<T>(
+    pub(crate) async fn send<T>(
         &self,
-        method: reqwest::Method,
-        path: &str,
-        token: &ApiToken,
+        builder: reqwest::RequestBuilder,
     ) -> Result<T, QuestradeError>
     where
         T: DeserializeOwned,
     {
-        let response = self
-            .http
-            .request(method, &format!("{}{}", token.api_server, path))
-            .bearer_auth(&token.access_token)
-            .send()
-            .await?
-            .json::<ApiResponse<T>>()
-            .await?;
+        let response = builder.send().await?.json::<ApiResponse<T>>().await?;
 
         match response {
             ApiResponse::Ok(time) => Ok(time),
@@ -82,7 +74,19 @@ impl Client {
         }
     }
 
+    pub(crate) fn base_request(
+        &self,
+        method: Method,
+        token: &ApiToken,
+        path: &str,
+    ) -> RequestBuilder {
+        self.http
+            .request(method, format!("{}{}", token.api_server, path))
+            .bearer_auth(&token.access_token)
+    }
+
     pub async fn time(&self, token: &ApiToken) -> Result<Time, QuestradeError> {
-        self.request(reqwest::Method::GET, "v1/time", token).await
+        self.send(self.base_request(Method::GET, token, "v1/time"))
+            .await
     }
 }
