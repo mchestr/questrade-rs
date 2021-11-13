@@ -1,0 +1,25 @@
+[package]
+name = "questrade"
+version = "0.1.0"
+edition = "2021"
+authors = ["Mike Chester <mike@chester.io>"]
+license = "MIT"
+description = "Async Questrade Client"
+categories = ["web-programming::http-client"]
+keywords = ["api", "finance", "stock", "questrade"]
+repository = "https://github.com/mchestr/questrade-rs"
+readme = "README.md"
+
+[dependencies]
+chrono = { version = "^0.4.19", features = [ "serde" ]}
+derive_more = "^0.99"
+oauth2 = { version = "4.1", features = [ "reqwest" ] }
+reqwest = { version = "0.11.6", features = [ "json" ] }
+serde = { version = "^1.0", features = [ "derive" ] }
+serde_json = "^1.0"
+strum = "^0.20"
+strum_macros = "^0.20"
+thiserror = "^1.0"
+tracing = "0.1"
+url = "2.2.2"
+uuid = { version = "0.8", features = [ "serde", "v4" ]}
