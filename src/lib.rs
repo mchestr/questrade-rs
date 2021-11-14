@@ -115,6 +115,12 @@ pub enum Currency {
 )]
 pub enum ActivityType {
     Interest,
+    Deposits,
+    Trades,
+    Dividends,
+    #[serde(rename = "FX conversion")]
+    #[strum(serialize = "FX conversion")]
+    FXConversion,
     #[serde(other)]
     Other(String),
 }
