@@ -103,7 +103,56 @@ pub struct Execution {
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct Order {}
+pub struct Order {
+    pub id: i64,
+    pub symbol: String,
+    pub symbol_id: i64,
+    pub total_quantity: i64,
+    pub open_quantity: i64,
+    pub filled_quantity: i64,
+    pub canceled_quantity: i64,
+    pub side: String,
+    #[serde(rename = "type")]
+    pub type_: String, // TODO enum
+    pub limit_price: f64,
+    pub stop_price: Option<f64>,
+    pub is_all_or_none: bool,
+    pub is_anonymous: bool,
+    pub iceberg_quantity: Option<i64>,
+    pub min_quantity: Option<i64>,
+    pub avg_exec_price: Option<f64>,
+    pub last_exec_price: Option<f64>,
+    pub source: String,        // TODO enum
+    pub time_in_force: String, // TODO enum
+    pub gtd_date: Option<DateTime<Utc>>,
+    pub state: String, // TODO enum
+    pub client_reason_str: String,
+    pub chain_id: i64,
+    pub creation_time: DateTime<Utc>,
+    pub update_time: DateTime<Utc>,
+    pub notes: String,
+    pub primary_route: String,       // TODO enum
+    pub secondary_route: String,     // TODO enum
+    pub order_route: String,         // TODO enum
+    pub venue_holding_order: String, // TODO enum
+    pub comission_charged: f64,
+    pub exchange_order_id: String,
+    pub is_significant_shareholder: bool,
+    pub is_insider: bool,
+    pub is_limit_offset_in_dollar: bool,
+    pub user_id: i64,
+    pub placement_commission: Option<f64>,
+    pub legs: Vec<Leg>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Leg {
+    pub strategy_type: String, // TODO enum
+    pub trigger_stop_price: Option<f64>,
+    pub order_group_id: i64,
+    pub order_class: Option<String>, // TODO enum
+}
 
 impl Client {
     pub async fn accounts(&self, token: &ApiToken) -> Result<Vec<Account>, QuestradeError> {
@@ -406,7 +455,7 @@ mod tests {
             combined_balances: expected_balance.clone(),
             per_currency_balances: expected_balance.clone(),
             sod_combined_balances: expected_balance.clone(),
-            sod_per_currency_balances: expected_balance.clone(),
+            sod_per_currency_balances: expected_balance,
         };
         let data: Balances = serde_json::from_str(data).expect("failed to deserialize JSON");
         assert_eq!(expected, data);
@@ -515,6 +564,112 @@ mod tests {
         };
         let d: Data = serde_json::from_str(data).expect("failed to deserialize JSON");
         let position = d.executions.get(0).unwrap();
+        assert_eq!(expected, position);
+    }
+
+    #[test]
+    fn account_orders_deserialize_works() {
+        #[derive(Deserialize)]
+        struct Data {
+            orders: Vec<Order>,
+        }
+        let data = r#"
+        {
+            "orders": [
+                {
+                    "id": 173577870,
+                    "symbol": "AAPL",
+                    "symbolId":  8049,
+                    "totalQuantity":  100,
+                    "openQuantity":  100,
+                    "filledQuantity":  0,
+                    "canceledQuantity": 0,
+                    "side": "Buy",
+                    "type": "Limit",
+                    "limitPrice": 500.95,
+                    "stopPrice": null,
+                    "isAllOrNone": false,
+                    "isAnonymous": false,
+                    "icebergQty": null,
+                    "minQuantity": null,
+                    "avgExecPrice": null,
+                    "lastExecPrice": null,
+                    "source": "TradingAPI",
+                    "timeInForce": "Day",
+                    "gtdDate":  null,
+                    "state": "Canceled",
+                    "clientReasonStr": "",
+                    "chainId": 173577870,
+                    "creationTime": "2014-10-23T20:03:41.636000-04:00",
+                    "updateTime": "2014-10-23T20:03:42.890000-04:00",
+                    "notes": "",
+                    "primaryRoute": "AUTO",
+                    "secondaryRoute": "",
+                    "orderRoute": "LAMP",
+                    "venueHoldingOrder": "",
+                    "comissionCharged": 0,
+                    "exchangeOrderId": "XS173577870",
+                    "isSignificantShareholder":  false,
+                    "isInsider":  false,
+                    "isLimitOffsetInDollar": false,
+                    "userId": 3000124,
+                    "placementCommission":  null,
+                    "legs": [],
+                    "strategyType": "SingleLeg",
+                    "triggerStopPrice": null,
+                    "orderGroupId": 0,
+                    "orderClass":  null,
+                    "mainChainId": 0
+                }
+            ]
+        }
+        "#;
+        let expected = &Order {
+            id: 173577870,
+            symbol: "AAPL".into(),
+            symbol_id: 8049,
+            total_quantity: 100,
+            open_quantity: 100,
+            filled_quantity: 0,
+            canceled_quantity: 0,
+            side: "Buy".into(),
+            type_: "Limit".into(),
+            limit_price: 500.95,
+            stop_price: None,
+            is_all_or_none: false,
+            is_anonymous: false,
+            iceberg_quantity: None,
+            min_quantity: None,
+            avg_exec_price: None,
+            last_exec_price: None,
+            source: "TradingAPI".into(),
+            time_in_force: "Day".into(),
+            gtd_date: None,
+            state: "Canceled".into(),
+            client_reason_str: "".into(),
+            chain_id: 173577870,
+            creation_time: DateTime::parse_from_rfc3339("2014-10-23T20:03:41.636-04:00")
+                .unwrap()
+                .with_timezone(&Utc),
+            update_time: DateTime::parse_from_rfc3339("2014-10-23T20:03:42.890-04:00")
+                .unwrap()
+                .with_timezone(&Utc),
+            notes: "".into(),
+            primary_route: "AUTO".into(),
+            secondary_route: "".into(),
+            order_route: "LAMP".into(),
+            venue_holding_order: "".into(),
+            comission_charged: 0.0,
+            exchange_order_id: "XS173577870".into(),
+            is_significant_shareholder: false,
+            is_insider: false,
+            is_limit_offset_in_dollar: false,
+            user_id: 3000124,
+            placement_commission: None,
+            legs: vec![],
+        };
+        let d: Data = serde_json::from_str(data).expect("failed to deserialize JSON");
+        let position = d.orders.get(0).unwrap();
         assert_eq!(expected, position);
     }
 }

@@ -2,12 +2,11 @@ use chrono::Utc;
 use oauth2::{AuthUrl, ClientId, TokenUrl};
 use reqwest::{Method, RequestBuilder};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use strum_macros::Display;
-use url::Url;
 
 use crate::{
     auth::{ApiToken, AuthClient},
     errors::{ApiResponse, QuestradeError},
+    Environment,
 };
 
 pub struct Client {
@@ -18,29 +17,6 @@ pub struct Client {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Time {
     pub time: chrono::DateTime<Utc>,
-}
-
-#[derive(Debug, Display, Serialize, Deserialize)]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
-pub enum Environment {
-    Production,
-}
-
-impl Environment {
-    fn host(&self) -> Result<Url, QuestradeError> {
-        Ok(match self {
-            Environment::Production => Url::parse("https://login.questrade.com")?,
-        })
-    }
-
-    fn authorize_url(&self) -> Result<Url, QuestradeError> {
-        Ok(self.host()?.join("/oauth2/authorize")?)
-    }
-
-    fn token_url(&self) -> Result<Url, QuestradeError> {
-        Ok(self.host()?.join("/oauth2/token")?)
-    }
 }
 
 impl Client {

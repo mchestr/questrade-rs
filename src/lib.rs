@@ -1,3 +1,4 @@
+use errors::QuestradeError;
 use serde::{Deserialize, Serialize};
 use serde_enum_str::{Deserialize_enum_str, Serialize_enum_str};
 
@@ -9,6 +10,32 @@ pub mod markets;
 pub mod symbols;
 
 pub use client::Client;
+use url::Url;
+
+#[derive(Debug, strum_macros::Display, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
+pub enum Environment {
+    Practice,
+    Production,
+}
+
+impl Environment {
+    fn host(&self) -> Result<Url, QuestradeError> {
+        Ok(match self {
+            Environment::Practice => Url::parse("https://practicelogin.questrade.com")?,
+            Environment::Production => Url::parse("https://login.questrade.com")?,
+        })
+    }
+
+    fn authorize_url(&self) -> Result<Url, QuestradeError> {
+        Ok(self.host()?.join("/oauth2/authorize")?)
+    }
+
+    fn token_url(&self) -> Result<Url, QuestradeError> {
+        Ok(self.host()?.join("/oauth2/token")?)
+    }
+}
 
 #[derive(
     Debug, strum_macros::Display, strum_macros::EnumIter, Deserialize, Serialize, PartialEq, Clone,

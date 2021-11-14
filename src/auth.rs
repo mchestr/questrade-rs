@@ -82,6 +82,7 @@ impl Client {
             .bytes()
             .await
             .map_err(|e| QuestradeError::InternalError(e.to_string()))?;
+
         Ok(HttpResponse {
             status_code,
             headers,
