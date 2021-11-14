@@ -45,7 +45,7 @@ impl Client {
         let response = builder.send().await?.json::<ApiResponse<T>>().await?;
 
         match response {
-            ApiResponse::Ok(time) => Ok(time),
+            ApiResponse::Ok(data) => Ok(data),
             ApiResponse::Err(err) => Err(QuestradeError::ApiError(err)),
         }
     }

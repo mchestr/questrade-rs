@@ -112,8 +112,7 @@ pub struct Order {
     pub filled_quantity: i64,
     pub canceled_quantity: i64,
     pub side: String,
-    #[serde(rename = "type")]
-    pub type_: String, // TODO enum
+    pub order_type: String, // TODO enum
     pub limit_price: f64,
     pub stop_price: Option<f64>,
     pub is_all_or_none: bool,
@@ -126,7 +125,7 @@ pub struct Order {
     pub time_in_force: String, // TODO enum
     pub gtd_date: Option<DateTime<Utc>>,
     pub state: String, // TODO enum
-    pub client_reason_str: String,
+    pub client_reason_str: Option<String>,
     pub chain_id: i64,
     pub creation_time: DateTime<Utc>,
     pub update_time: DateTime<Utc>,
@@ -137,12 +136,18 @@ pub struct Order {
     pub venue_holding_order: String, // TODO enum
     pub comission_charged: f64,
     pub exchange_order_id: String,
-    pub is_significant_shareholder: bool,
+    pub is_significant_share_holder: bool,
     pub is_insider: bool,
     pub is_limit_offset_in_dollar: bool,
     pub user_id: i64,
     pub placement_commission: Option<f64>,
     pub legs: Vec<Leg>,
+    pub is_cross_zero: bool,
+    pub order_class: Option<String>,
+    pub order_group_id: i64,
+    pub rejection_reason: String,
+    pub strategy_type: String, // TODO enum
+    pub trigger_stop_price: Option<f64>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
@@ -266,6 +271,10 @@ impl Client {
         end: Option<&DateTime<Utc>>,
         state_filter: Option<StateFilter>,
     ) -> Result<Vec<Order>, QuestradeError> {
+        #[derive(Deserialize)]
+        pub struct Orders {
+            pub orders: Vec<Order>,
+        }
         let builder = self.base_request(
             Method::GET,
             token,
@@ -282,7 +291,8 @@ impl Client {
         if let Some(state) = state_filter {
             query_params.push(("stateFilter", format!("{}", state)));
         }
-        self.send(builder).await
+        let data: Orders = self.send(builder).await?;
+        Ok(data.orders)
     }
 
     pub async fn account_order(
@@ -577,99 +587,105 @@ mod tests {
         {
             "orders": [
                 {
-                    "id": 173577870,
-                    "symbol": "AAPL",
-                    "symbolId":  8049,
-                    "totalQuantity":  100,
-                    "openQuantity":  100,
-                    "filledQuantity":  0,
+                    "avgExecPrice": 0,
                     "canceledQuantity": 0,
-                    "side": "Buy",
-                    "type": "Limit",
-                    "limitPrice": 500.95,
-                    "stopPrice": null,
+                    "chainId": 964368736,
+                    "comissionCharged": 0,
+                    "creationTime": "2021-11-14T17:20:40.835000-05:00",
+                    "exchangeOrderId": "",
+                    "filledQuantity": 0,
+                    "gtdDate": null,
+                    "icebergQuantity": null,
+                    "id": 964368736,
                     "isAllOrNone": false,
                     "isAnonymous": false,
-                    "icebergQty": null,
-                    "minQuantity": null,
-                    "avgExecPrice": null,
-                    "lastExecPrice": null,
-                    "source": "TradingAPI",
-                    "timeInForce": "Day",
-                    "gtdDate":  null,
-                    "state": "Canceled",
-                    "clientReasonStr": "",
-                    "chainId": 173577870,
-                    "creationTime": "2014-10-23T20:03:41.636000-04:00",
-                    "updateTime": "2014-10-23T20:03:42.890000-04:00",
-                    "notes": "",
-                    "primaryRoute": "AUTO",
-                    "secondaryRoute": "",
-                    "orderRoute": "LAMP",
-                    "venueHoldingOrder": "",
-                    "comissionCharged": 0,
-                    "exchangeOrderId": "XS173577870",
-                    "isSignificantShareholder":  false,
-                    "isInsider":  false,
+                    "isCrossZero": false,
+                    "isInsider": false,
                     "isLimitOffsetInDollar": false,
-                    "userId": 3000124,
-                    "placementCommission":  null,
+                    "isSignificantShareHolder": false,
+                    "lastExecPrice": null,
                     "legs": [],
-                    "strategyType": "SingleLeg",
-                    "triggerStopPrice": null,
+                    "limitPrice": 27.85,
+                    "minQuantity": null,
+                    "notes": "",
+                    "openQuantity": 1,
+                    "orderClass": null,
                     "orderGroupId": 0,
-                    "orderClass":  null,
-                    "mainChainId": 0
+                    "orderRoute": "ITSR",
+                    "orderType": "Limit",
+                    "placementCommission": null,
+                    "primaryRoute": "AUTO",
+                    "rejectionReason": "",
+                    "secondaryRoute": "AUTO",
+                    "side": "Buy",
+                    "source": "Undefined",
+                    "state": "Queued",
+                    "stopPrice": null,
+                    "strategyType": "SingleLeg",
+                    "symbol": "XEQT.TO",
+                    "symbolId": 26777456,
+                    "timeInForce": "GoodTillCanceled",
+                    "totalQuantity": 1,
+                    "triggerStopPrice": null,
+                    "updateTime": "2021-11-14T17:20:40.843000-05:00",
+                    "userId": 3000124,
+                    "venueHoldingOrder": ""
                 }
             ]
         }
         "#;
         let expected = &Order {
-            id: 173577870,
-            symbol: "AAPL".into(),
-            symbol_id: 8049,
-            total_quantity: 100,
-            open_quantity: 100,
-            filled_quantity: 0,
+            avg_exec_price: Some(0.0),
             canceled_quantity: 0,
-            side: "Buy".into(),
-            type_: "Limit".into(),
-            limit_price: 500.95,
-            stop_price: None,
+            chain_id: 964368736,
+            comission_charged: 0.0,
+            creation_time: DateTime::parse_from_rfc3339("2021-11-14T17:20:40.835000-05:00")
+                .unwrap()
+                .with_timezone(&Utc),
+            exchange_order_id: "".into(),
+            filled_quantity: 0,
+            gtd_date: None,
+            iceberg_quantity: None,
+            id: 964368736,
             is_all_or_none: false,
             is_anonymous: false,
-            iceberg_quantity: None,
-            min_quantity: None,
-            avg_exec_price: None,
-            last_exec_price: None,
-            source: "TradingAPI".into(),
-            time_in_force: "Day".into(),
-            gtd_date: None,
-            state: "Canceled".into(),
-            client_reason_str: "".into(),
-            chain_id: 173577870,
-            creation_time: DateTime::parse_from_rfc3339("2014-10-23T20:03:41.636-04:00")
-                .unwrap()
-                .with_timezone(&Utc),
-            update_time: DateTime::parse_from_rfc3339("2014-10-23T20:03:42.890-04:00")
-                .unwrap()
-                .with_timezone(&Utc),
-            notes: "".into(),
-            primary_route: "AUTO".into(),
-            secondary_route: "".into(),
-            order_route: "LAMP".into(),
-            venue_holding_order: "".into(),
-            comission_charged: 0.0,
-            exchange_order_id: "XS173577870".into(),
-            is_significant_shareholder: false,
+            is_cross_zero: false,
             is_insider: false,
             is_limit_offset_in_dollar: false,
-            user_id: 3000124,
-            placement_commission: None,
+            is_significant_share_holder: false,
+            last_exec_price: None,
             legs: vec![],
+            limit_price: 27.85,
+            min_quantity: None,
+            notes: "".into(),
+            open_quantity: 1,
+            order_class: None,
+            order_group_id: 0,
+            order_route: "ITSR".into(),
+            order_type: "Limit".into(),
+            placement_commission: None,
+            primary_route: "AUTO".into(),
+            rejection_reason: "".into(),
+            secondary_route: "AUTO".into(),
+            side: "Buy".into(),
+            source: "Undefined".into(),
+            state: "Queued".into(),
+            stop_price: None,
+            strategy_type: "SingleLeg".into(),
+            symbol: "XEQT.TO".into(),
+            symbol_id: 26777456,
+            time_in_force: "GoodTillCanceled".into(),
+            total_quantity: 1,
+            trigger_stop_price: None,
+            update_time: DateTime::parse_from_rfc3339("2021-11-14T17:20:40.843000-05:00")
+                .unwrap()
+                .with_timezone(&Utc),
+            user_id: 3000124,
+            venue_holding_order: "".into(),
+            client_reason_str: None,
         };
         let d: Data = serde_json::from_str(data).expect("failed to deserialize JSON");
-        let position = d.orders.get(0).unwrap();
-        assert_eq!(expected, position);
+        let order = d.orders.get(0).unwrap();
+        assert_eq!(expected, order);
     }
 }

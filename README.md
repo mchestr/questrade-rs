@@ -15,7 +15,7 @@ Run the following:
 
 ```rust
 use std::time::Duration;
-use questrade::client::Environment;
+use questrade::Environment;
 
 static QT_CONSUMER_KEY: &str = "`QT_CONSUMER_KEY`";
 static QT_REFRESH_TOKEN: &str = "QT_REFRESH_TOKEN";
