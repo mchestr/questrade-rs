@@ -135,6 +135,28 @@ pub enum StateFilter {
     Closed,
 }
 
+#[derive(
+    Debug, strum_macros::Display, strum_macros::EnumIter, Deserialize, Serialize, PartialEq, Clone,
+)]
+pub enum Interval {
+    OneMinute,
+    TwoMinutes,
+    ThreeMinutes,
+    FourMinutes,
+    FiveMinutes,
+    TenMinutes,
+    FifteenMinutes,
+    TwentyMinutes,
+    HalfHour,
+    OneHour,
+    TwoHours,
+    FourHours,
+    OneDay,
+    OneWeek,
+    OneMonth,
+    OneYear,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -215,6 +237,31 @@ mod tests {
                 StateFilter::All => "All",
                 StateFilter::Open => "Open",
                 StateFilter::Closed => "Closed",
+            };
+            assert_eq!(expected_string, format!("{}", f));
+        })
+    }
+
+    #[test]
+    fn state_interval_display_works() {
+        <Interval as strum::IntoEnumIterator>::iter().for_each(|f| {
+            let expected_string = match f {
+                Interval::OneMinute => String::from("OneMinute"),
+                Interval::TwoMinutes => String::from("TwoMinutes"),
+                Interval::ThreeMinutes => String::from("ThreeMinutes"),
+                Interval::FourMinutes => String::from("FourMinutes"),
+                Interval::FiveMinutes => String::from("FiveMinutes"),
+                Interval::TenMinutes => String::from("TenMinutes"),
+                Interval::FifteenMinutes => String::from("FifteenMinutes"),
+                Interval::TwentyMinutes => String::from("TwentyMinutes"),
+                Interval::HalfHour => String::from("HalfHour"),
+                Interval::OneHour => String::from("OneHour"),
+                Interval::TwoHours => String::from("TwoHours"),
+                Interval::FourHours => String::from("FourHours"),
+                Interval::OneDay => String::from("OneDay"),
+                Interval::OneWeek => String::from("OneWeek"),
+                Interval::OneMonth => String::from("OneMonth"),
+                Interval::OneYear => String::from("OneYear"),
             };
             assert_eq!(expected_string, format!("{}", f));
         })
