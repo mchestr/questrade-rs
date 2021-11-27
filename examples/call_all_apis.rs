@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use chrono::{DateTime, Utc};
 use questrade::{auth::ApiToken, Interval};
-use reqwest::Proxy;
 use tracing::info;
 
 static QT_CONSUMER_KEY: &str = "QT_CONSUMER_KEY";
