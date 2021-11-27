@@ -2,7 +2,7 @@ use chrono::{DateTime, Utc};
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
 
-use crate::{auth::ApiToken, errors::QuestradeError, Client, Currency, Interval};
+use crate::{auth::ApiToken, errors::QuestradeError, Client, Interval};
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -45,16 +45,15 @@ pub struct Quote {
 pub struct Market {
     pub name: String,
     pub trading_venues: Vec<String>,
-    pub default_trading_venue: String,      // TODO enum
+    pub default_trading_venue: String,       // TODO enum
     pub primary_order_routes: Vec<String>,   // TODO enum
     pub secondary_order_routes: Vec<String>, // TODO enum
-    pub level_1_feeds: Vec<String>,         // TODO enum
-    pub level_2_feeds: Option<Vec<String>>,         // TODO enum
-    pub extended_start_time: Option<DateTime<Utc>>,
+    pub level_1_feeds: Vec<String>,          // TODO enum
+    pub level_2_feeds: Vec<String>,          // TODO enum
+    pub extended_start_time: DateTime<Utc>,
     pub start_time: DateTime<Utc>,
     pub end_time: DateTime<Utc>,
     pub extended_end_time: Option<DateTime<Utc>>,
-    pub currency: Currency,
     pub snap_quotes_limit: i64,
 }
 
@@ -63,8 +62,8 @@ impl Client {
         &self,
         token: &ApiToken,
         symbol_id: i64,
-        start: DateTime<Utc>,
-        end: DateTime<Utc>,
+        start: &DateTime<Utc>,
+        end: &DateTime<Utc>,
         interval: Interval,
     ) -> Result<Vec<Candle>, QuestradeError> {
         #[derive(Deserialize)]
@@ -204,6 +203,9 @@ mod tests {
                 "defaultTradingVenue": "AUTO",
                 "primaryOrderRoutes": [
                     "AUTO"
+                ],            
+                "level2Feeds": [
+                    "PINX"
                 ],
                 "secondaryOrderRoutes": [
                     "TSX",
@@ -219,7 +221,6 @@ mod tests {
                 "extendedStartTime": "2014-10-06T07:00:00.000000-04:00",
                 "startTime": "2014-10-06T09:30:00.000000-04:00",
                 "endTime": "2014-10-06T09:30:00.000000-04:00",
-                "currency": "CAD",
                 "snapQuotesLimit": 99999
             }]
          }
@@ -243,10 +244,10 @@ mod tests {
                 String::from("PURE"),
                 String::from("TSX"),
             ],
-            level_2_feeds: None,
-            extended_start_time: Some(DateTime::parse_from_rfc3339("2014-10-06T07:00:00.000000-04:00")
+            level_2_feeds: vec![String::from("PINX")],
+            extended_start_time: DateTime::parse_from_rfc3339("2014-10-06T07:00:00.000000-04:00")
                 .unwrap()
-                .with_timezone(&Utc)),
+                .with_timezone(&Utc),
             start_time: DateTime::parse_from_rfc3339("2014-10-06T09:30:00.000000-04:00")
                 .unwrap()
                 .with_timezone(&Utc),
@@ -254,7 +255,6 @@ mod tests {
                 .unwrap()
                 .with_timezone(&Utc),
             extended_end_time: None,
-            currency: Currency::CAD,
             snap_quotes_limit: 99999,
         };
         let d: Data = serde_json::from_str(data).expect("failed to deserialize JSON");
