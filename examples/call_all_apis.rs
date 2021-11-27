@@ -37,9 +37,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .timeout(Duration::from_secs(30))
         .connect_timeout(Duration::from_secs(10))
         .pool_idle_timeout(Duration::from_secs(300))
-        .proxy(Proxy::http("http://127.0.0.1:8080")?)
-        .proxy(Proxy::https("http://127.0.0.1:8080")?)
-        .danger_accept_invalid_certs(true)
         .build()
         .unwrap();
 
