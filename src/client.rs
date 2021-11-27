@@ -1,17 +1,17 @@
 use chrono::Utc;
-use oauth2::{AuthUrl, ClientId, TokenUrl};
 use reqwest::{Method, RequestBuilder};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::{
-    auth::{ApiToken, AuthClient},
+    auth::ApiToken,
     errors::{ApiResponse, QuestradeError},
     Environment,
 };
 
 pub struct Client {
     pub(crate) http: reqwest::Client,
-    pub(crate) auth_client: AuthClient,
+    pub(crate) env: Environment,
+    pub(crate) consumer_key: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -22,17 +22,18 @@ pub struct Time {
 impl Client {
     pub fn new(
         http_client: reqwest::Client,
-        consumer_key: &str,
+        consumer_key: String,
         env: Environment,
     ) -> Result<Self, QuestradeError> {
-        let client_id = ClientId::new(consumer_key.into());
-        let auth_url = AuthUrl::new(env.authorize_url()?.into()).unwrap();
-        let token_url = TokenUrl::new(env.token_url()?.into()).unwrap();
-
         Ok(Client {
             http: http_client,
-            auth_client: AuthClient::new(client_id, None, auth_url, Some(token_url)),
+            env,
+            consumer_key,
         })
+    }
+
+    pub fn builder() -> ClientBuilder {
+        ClientBuilder::default()
     }
 
     pub(crate) async fn send<T>(
@@ -64,6 +65,42 @@ impl Client {
     pub async fn time(&self, token: &ApiToken) -> Result<Time, QuestradeError> {
         self.send(self.base_request(Method::GET, token, "v1/time"))
             .await
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct ClientBuilder {
+    http_client: Option<reqwest::Client>,
+    consumer_key: Option<String>,
+    env: Option<Environment>,
+}
+
+impl ClientBuilder {
+    pub fn http_client(mut self, http_client: reqwest::Client) -> Self {
+        self.http_client = Some(http_client);
+        self
+    }
+
+    pub fn consumer_key(mut self, consumer_key: String) -> Self {
+        self.consumer_key = Some(consumer_key);
+        self
+    }
+
+    pub fn env(mut self, env: Environment) -> Self {
+        self.env = Some(env);
+        self
+    }
+
+    pub fn build(self) -> Result<Client, QuestradeError> {
+        let http_client = self.http_client.ok_or_else(|| {
+            QuestradeError::Builder(String::from("http_client must be specified"))
+        })?;
+        let consumer_key = self.consumer_key.ok_or_else(|| {
+            QuestradeError::Builder(String::from("consumer_key must be specified"))
+        })?;
+        let env = self.env.unwrap_or(Environment::Production);
+
+        Client::new(http_client, consumer_key, env)
     }
 }
 

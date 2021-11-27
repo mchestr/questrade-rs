@@ -18,6 +18,8 @@ pub enum ApiResponse<T> {
 pub enum QuestradeError {
     #[error("{0:?}")]
     ApiError(ApiError),
+    #[error("{0:?}")]
+    Builder(String),
     #[error("{0}")]
     InternalError(String),
     #[error("{0}")]

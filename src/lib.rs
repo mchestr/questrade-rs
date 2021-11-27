@@ -28,6 +28,7 @@ impl Environment {
         })
     }
 
+    #[allow(dead_code)]
     fn authorize_url(&self) -> Result<Url, QuestradeError> {
         Ok(self.host()?.join("/oauth2/authorize")?)
     }
