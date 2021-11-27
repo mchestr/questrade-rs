@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use questrade::auth::ApiToken;
+use questrade::{auth::ApiToken, Currency};
 use tracing::info;
 
 static QT_CONSUMER_KEY: &str = "QT_CONSUMER_KEY";
@@ -51,5 +51,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let accounts = c.accounts(&token).await.unwrap();
     info!("got accounts: {:#?}", accounts);
+
+    let mut total_cad = 0.0;
+    for account in accounts {
+        let balances = c.account_balances(&token, &account.number).await?;
+        info!("got balances: {:#?}", balances);
+        total_cad += balances
+            .combined_balances
+            .iter()
+            .filter(|&b| b.currency == Currency::CAD)
+            .fold(0.0, |acc, b| acc + b.total_equity);
+    }
+    info!("Total CAD in all accounts: ${:.2}", total_cad);
     Ok(())
 }
